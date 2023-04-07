@@ -11,16 +11,14 @@ type RemoteView struct {
 	Parent *RemoteView
 	Delta  map[string]flow.RegisterValue
 
-	getRemoteRegister registers.RegisterGetRegisterFunc
+	registerReader registers.RegisterGetRegisterFunc
 }
 
-func NewRemoteView(getRemoteRegister registers.RegisterGetRegisterFunc) *RemoteView {
-
-	view := &RemoteView{
-		Delta:             make(map[string]flow.RegisterValue),
-		getRemoteRegister: getRemoteRegister,
+func NewRemoteView(reader registers.RegisterGetRegisterFunc) *RemoteView {
+	return &RemoteView{
+		Delta:          make(map[string]flow.RegisterValue),
+		registerReader: reader,
 	}
-	return view
 }
 
 func (v *RemoteView) NewChild() state.View {
@@ -66,7 +64,7 @@ func (v *RemoteView) Get(owner, key string) (flow.RegisterValue, error) {
 	}
 
 	// last use the getRemoteRegister
-	resp, err := v.getRemoteRegister(owner, key)
+	resp, err := v.registerReader(owner, key)
 	if err != nil {
 		return nil, err
 	}

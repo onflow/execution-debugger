@@ -8,9 +8,6 @@ import (
 	"github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/registers"
 	"github.com/onflow/flow-dps/api/dps"
-	"github.com/onflow/flow-go/engine/execution/state"
-	"github.com/onflow/flow-go/ledger/common/pathfinder"
-	"github.com/onflow/flow-go/ledger/complete"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -75,36 +72,19 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 		return nil, err
 	}
 
-	readFunc := func(address string, key string) (flow.RegisterValue, error) {
-		ledgerKey := state.RegisterIDToKey(flow.RegisterID{Key: key, Owner: address})
-		ledgerPath, err := pathfinder.KeyToPath(ledgerKey, complete.DefaultPathFinderVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err := client.GetRegisterValues(ctx, &dps.GetRegisterValuesRequest{
-			Height: blockHeight,
-			Paths:  [][]byte{ledgerPath[:]},
-		})
-		if err != nil {
-			return nil, err
-		}
-		return resp.Values[0], nil
-	}
-
 	cache, err := registers.NewRemoteRegisterFileCache(blockHeight, d.log)
 	if err != nil {
 		return nil, err
 	}
-	registerReadWrapper := []registers.RegisterGetWrapper{
+
+	wrappers := []registers.RegisterGetWrapper{
 		cache,
 		registers.NewRemoteRegisterReadTracker(d.directory, d.log),
 		registers.NewCaptureContractWrapper(d.directory, d.log),
 	}
 
-	for _, wrapper := range registerReadWrapper {
-		readFunc = wrapper.Wrap(readFunc)
-	}
+	readFunc := registers.NewRemoteReader(client, blockHeight)
+	readFunc.Wrap(wrappers...)
 
 	view := debugger.NewRemoteView(readFunc)
 
@@ -137,7 +117,7 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 
 	txErr, err = dbg.RunTransaction(txBody)
 
-	for _, wrapper := range registerReadWrapper {
+	for _, wrapper := range wrappers {
 		switch w := wrapper.(type) {
 		case io.Closer:
 			err := w.Close()
