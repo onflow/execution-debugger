@@ -5,6 +5,7 @@ import (
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/runtime/ast"
 	"github.com/onflow/cadence/runtime/interpreter"
+	"github.com/onflow/execution-debugger"
 	"github.com/onflow/flow-go/fvm"
 	"github.com/onflow/flow-go/fvm/environment"
 	fvmRuntime "github.com/onflow/flow-go/fvm/runtime"

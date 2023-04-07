@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/registers"
 	"github.com/onflow/flow-dps/api/dps"
 	"github.com/onflow/flow-go/engine/execution/state"

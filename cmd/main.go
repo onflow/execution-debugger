@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"flag"
-	debugger "github.com/onflow/execution-debugger"
+	"github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/debuggers"
 	"github.com/onflow/flow-dps/api/dps"
 	"github.com/onflow/flow-go/model/flow"
