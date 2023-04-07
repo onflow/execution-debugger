@@ -25,6 +25,7 @@ import (
 
 type TransactionDebugger struct {
 	txResolver  debugger.TransactionResolver
+	dpsClient   dps.APIClient
 	archiveHost string
 	chain       flow.Chain
 	directory   string
@@ -34,6 +35,7 @@ type TransactionDebugger struct {
 func NewTransactionDebugger(
 	txResolver debugger.TransactionResolver,
 	archiveHost string,
+	dpsClient dps.APIClient,
 	chain flow.Chain,
 	logger zerolog.Logger) *TransactionDebugger {
 
@@ -41,6 +43,7 @@ func NewTransactionDebugger(
 		txResolver:  txResolver,
 		archiveHost: archiveHost,
 		chain:       chain,
+		dpsClient:   dpsClient,
 
 		directory: fmt.Sprintf("t_%d", rand.Intn(1000)), // TODO remove
 

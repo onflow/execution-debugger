@@ -3,10 +3,15 @@ package main
 import (
 	"context"
 	"flag"
+	debugger "github.com/janezpodhostnik/flow-transaction-info"
 	"github.com/janezpodhostnik/flow-transaction-info/debuggers"
+	"github.com/onflow/flow-dps/api/dps"
 	"github.com/onflow/flow-go/model/flow"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"os"
 )
 
@@ -32,7 +37,24 @@ func main() {
 	chain := flow.Mainnet.Chain()
 	ctx := context.Background()
 
-	txErr, err := debuggers.NewTransactionDebugger(txid, host, chain, log.Logger).RunTransaction(ctx)
+	conn, err := grpc.Dial(
+		host,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		err = errors.Wrap(err, "could not connect to archive node")
+		panic(err)
+	}
+	client := dps.NewAPIClient(conn)
+
+	txResolver := &debugger.NetworkTransactions{
+		Client: client,
+		ID:     txid,
+	}
+
+	txErr, err := debuggers.
+		NewTransactionDebugger(txResolver, host, client, chain, log.Logger).
+		RunTransaction(ctx)
 
 	if txErr != nil {
 		log.Error().
