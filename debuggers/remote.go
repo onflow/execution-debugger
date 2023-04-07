@@ -1,19 +1,19 @@
-package main
+package debuggers
 
 import (
 	"github.com/google/pprof/profile"
+	"github.com/janezpodhostnik/flow-transaction-info"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/runtime/ast"
 	"github.com/onflow/cadence/runtime/interpreter"
+	"github.com/onflow/flow-go/fvm"
 	"github.com/onflow/flow-go/fvm/environment"
-	runtime2 "github.com/onflow/flow-go/fvm/runtime"
+	fvmRuntime "github.com/onflow/flow-go/fvm/runtime"
 	"github.com/onflow/flow-go/fvm/state"
+	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
 	"os"
 	"path/filepath"
-
-	"github.com/onflow/flow-go/fvm"
-	"github.com/onflow/flow-go/model/flow"
 )
 
 type RemoteDebugger struct {
@@ -25,7 +25,7 @@ type RemoteDebugger struct {
 }
 
 func NewRemoteDebugger(
-	view *RemoteView,
+	view *debugger.RemoteView,
 	chain flow.Chain,
 	directory string,
 	logger zerolog.Logger) *RemoteDebugger {
@@ -41,9 +41,9 @@ func NewRemoteDebugger(
 		fvm.WithLogger(logger),
 		fvm.WithChain(chain),
 		fvm.WithTransactionProcessors(fvm.NewTransactionInvoker()),
-		fvm.WithReusableCadenceRuntimePool(runtime2.NewReusableCadenceRuntimePool(
+		fvm.WithReusableCadenceRuntimePool(fvmRuntime.NewReusableCadenceRuntimePool(
 			1,
-			runtime2.ReusableCadenceRuntimePoolConfig{
+			fvmRuntime.ReusableCadenceRuntimePoolConfig{
 				OnCadenceStatement: profileBuilder.OnCadenceStatement,
 			},
 		)),
@@ -138,7 +138,7 @@ func (p *ProfileBuilder) Close() error {
 	return nil
 }
 
-func (p *ProfileBuilder) OnCadenceStatement(fvmEnv runtime2.Environment, inter *interpreter.Interpreter, statement ast.Statement) {
+func (p *ProfileBuilder) OnCadenceStatement(fvmEnv fvmRuntime.Environment, inter *interpreter.Interpreter, statement ast.Statement) {
 	stack := inter.CallStack()
 	if len(stack) == 0 {
 		// what now?

@@ -1,10 +1,11 @@
-package main
+package debuggers
 
 import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/janezpodhostnik/flow-transaction-info"
 	"github.com/janezpodhostnik/flow-transaction-info/registers"
 	"github.com/onflow/flow-dps/api/dps"
 	"github.com/onflow/flow-dps/codec/zbor"
@@ -108,7 +109,7 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 		readFunc = wrapper.Wrap(readFunc)
 	}
 
-	view := NewRemoteView(readFunc)
+	view := debugger.NewRemoteView(readFunc)
 
 	logInterceptor := NewLogInterceptor(d.log, d.directory)
 	defer func() {
@@ -120,7 +121,7 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 		}
 	}()
 
-	debugger := NewRemoteDebugger(view, d.chain, d.directory, d.log.Output(logInterceptor))
+	dbg := NewRemoteDebugger(view, d.chain, d.directory, d.log.Output(logInterceptor))
 	defer func(debugger *RemoteDebugger) {
 		err := debugger.Close()
 		if err != nil {
@@ -128,7 +129,7 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 				Err(err).
 				Msg("Could not close debugger.")
 		}
-	}(debugger)
+	}(dbg)
 
 	codec := zbor.NewCodec()
 
@@ -152,7 +153,7 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 
 	err = d.dumpTransactionToFile(txBody)
 
-	txErr, err = debugger.RunTransaction(&txBody)
+	txErr, err = dbg.RunTransaction(&txBody)
 
 	for _, wrapper := range registerReadWrapper {
 		switch w := wrapper.(type) {

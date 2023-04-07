@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/janezpodhostnik/flow-transaction-info/debuggers"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -31,7 +32,7 @@ func main() {
 	chain := flow.Mainnet.Chain()
 	ctx := context.Background()
 
-	txErr, err := NewTransactionDebugger(txid, host, chain, log.Logger).RunTransaction(ctx)
+	txErr, err := debuggers.NewTransactionDebugger(txid, host, chain, log.Logger).RunTransaction(ctx)
 
 	if txErr != nil {
 		log.Error().
