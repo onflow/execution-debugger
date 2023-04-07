@@ -2,7 +2,7 @@ package debugger
 
 import (
 	"fmt"
-	"github.com/janezpodhostnik/flow-transaction-info/registers"
+	"github.com/onflow/execution-debugger/registers"
 	"github.com/onflow/flow-go/fvm/state"
 	"github.com/onflow/flow-go/model/flow"
 )

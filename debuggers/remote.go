@@ -2,7 +2,6 @@ package debuggers
 
 import (
 	"github.com/google/pprof/profile"
-	"github.com/janezpodhostnik/flow-transaction-info"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/runtime/ast"
 	"github.com/onflow/cadence/runtime/interpreter"

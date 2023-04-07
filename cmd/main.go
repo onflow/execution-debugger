@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	debugger "github.com/janezpodhostnik/flow-transaction-info"
-	"github.com/janezpodhostnik/flow-transaction-info/debuggers"
+	debugger "github.com/onflow/execution-debugger"
+	"github.com/onflow/execution-debugger/debuggers"
 	"github.com/onflow/flow-dps/api/dps"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/pkg/errors"
