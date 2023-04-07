@@ -8,7 +8,6 @@ import (
 	"github.com/janezpodhostnik/flow-transaction-info"
 	"github.com/janezpodhostnik/flow-transaction-info/registers"
 	"github.com/onflow/flow-dps/api/dps"
-	"github.com/onflow/flow-dps/codec/zbor"
 	"github.com/onflow/flow-go/engine/execution/state"
 	"github.com/onflow/flow-go/ledger/common/pathfinder"
 	"github.com/onflow/flow-go/ledger/complete"
@@ -17,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -24,27 +24,25 @@ import (
 )
 
 type TransactionDebugger struct {
-	txID        flow.Identifier
+	txResolver  debugger.TransactionResolver
 	archiveHost string
 	chain       flow.Chain
-
-	directory string
-
-	log zerolog.Logger
+	directory   string
+	log         zerolog.Logger
 }
 
 func NewTransactionDebugger(
-	txID flow.Identifier,
+	txResolver debugger.TransactionResolver,
 	archiveHost string,
 	chain flow.Chain,
 	logger zerolog.Logger) *TransactionDebugger {
 
 	return &TransactionDebugger{
-		txID:        txID,
+		txResolver:  txResolver,
 		archiveHost: archiveHost,
 		chain:       chain,
 
-		directory: "t_" + txID.String(),
+		directory: fmt.Sprintf("t_%d", rand.Intn(1000)), // TODO remove
 
 		log: logger,
 	}
@@ -56,10 +54,6 @@ type clientWithConnection struct {
 }
 
 func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, processError error) {
-	d.log.Info().
-		Str("txID", d.txID.String()).
-		Msg("Running transaction. This may differ from how the transaction was actually run on the network.")
-
 	client, err := d.getClient()
 	if err != nil {
 		return nil, err
@@ -73,7 +67,7 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 		}
 	}()
 
-	blockHeight, err := d.getTransactionBlockHeight(ctx, client)
+	blockHeight, err := d.txResolver.BlockHeight()
 	if err != nil {
 		return nil, err
 	}
@@ -131,29 +125,14 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 		}
 	}(dbg)
 
-	codec := zbor.NewCodec()
+	//err = d.dumpTransactionToFile(txBody)
 
-	txResult, err := client.GetTransaction(ctx, &dps.GetTransactionRequest{
-		TransactionID: d.txID[:],
-	})
+	txBody, err := d.txResolver.TransactionBody()
 	if err != nil {
-		d.log.Error().
-			Err(err).
-			Msg("Could not get transaction.")
-		return
-	}
-	var txBody flow.TransactionBody
-	err = codec.Unmarshal(txResult.Data, &txBody)
-	if err != nil {
-		d.log.Error().
-			Err(err).
-			Msg("Could not unmarshal transaction.")
-		return
+		return nil, err
 	}
 
-	err = d.dumpTransactionToFile(txBody)
-
-	txErr, err = dbg.RunTransaction(&txBody)
+	txErr, err = dbg.RunTransaction(txBody)
 
 	for _, wrapper := range registerReadWrapper {
 		switch w := wrapper.(type) {
@@ -188,25 +167,6 @@ func (d *TransactionDebugger) getClient() (clientWithConnection, error) {
 		APIClient:  client,
 		ClientConn: conn,
 	}, nil
-}
-
-func (d *TransactionDebugger) getTransactionBlockHeight(ctx context.Context, client dps.APIClient) (uint64, error) {
-
-	resp, err := client.GetHeightForTransaction(ctx, &dps.GetHeightForTransactionRequest{
-		TransactionID: d.txID[:],
-	})
-	if err != nil {
-		d.log.Error().
-			Err(err).
-			Msg("Could not get transaction block height.")
-		return 0, err
-	}
-	blockHeight := resp.GetHeight()
-
-	d.log.Info().
-		Uint64("height", blockHeight).
-		Msg("Got block height for transaction.")
-	return blockHeight, nil
 }
 
 func (d *TransactionDebugger) dumpTransactionToFile(body flow.TransactionBody) error {
