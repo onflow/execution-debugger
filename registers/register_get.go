@@ -11,9 +11,9 @@ import (
 
 type RegisterGetRegisterFunc func(string, string) (flow.RegisterValue, error)
 
-func (r RegisterGetRegisterFunc) Wrap(wrappers ...RegisterGetWrapper) {
+func (r *RegisterGetRegisterFunc) Wrap(wrappers ...RegisterGetWrapper) {
 	for _, wrapper := range wrappers {
-		r = wrapper.Wrap(r) // TODO check otherwise return r
+		*r = wrapper.Wrap(*r)
 	}
 }
 
