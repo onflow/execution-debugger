@@ -15,6 +15,8 @@ type TransactionResolver interface {
 
 var _ TransactionResolver = &NetworkTransactions{}
 
+// NetworkTransactions implements transaction resolver that fetches existing transaction
+// from the Flow network using the archive node client.
 type NetworkTransactions struct {
 	Client dps.APIClient
 	ID     flow.Identifier
@@ -57,6 +59,8 @@ func (n *NetworkTransactions) BlockHeight() (uint64, error) {
 
 var _ TransactionResolver = &CustomTransaction{}
 
+// CustomTransaction implements transaction resolver that returns a transaction that was
+// provided on the initialization, used for custom transactions you manually build.
 type CustomTransaction struct {
 	Tx     *flow.TransactionBody
 	Height uint64
