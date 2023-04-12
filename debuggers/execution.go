@@ -5,90 +5,75 @@ import (
 	debugger "github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/registers"
 	"github.com/onflow/flow-dps/api/dps"
+	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"io"
 )
 
 type ExecutionDebugger struct {
-	logger        zerolog.Logger
+	log           zerolog.Logger
 	archiveClient dps.APIClient
+	chain         flow.Chain
+}
+
+type DebugResult struct {
+	RegisterReads []registers.RegisterReadEntry
 }
 
 func NewExecutionDebugger(
-	archiveHost string,
-	txResolver debugger.TransactionResolver,
-	logger zerolog.Logger,
+	chain flow.Chain,
+	archiveClient dps.APIClient,
+	log zerolog.Logger,
 ) (*ExecutionDebugger, error) {
-	conn, err := grpc.Dial(
-		archiveHost,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		logger.Error().
-			Err(err).
-			Str("host", archiveHost).
-			Msg("Could not connect to server.")
-		return nil, err
-	}
-	client := dps.NewAPIClient(conn)
-
 	return &ExecutionDebugger{
-		archiveClient: client,
+		archiveClient: archiveClient,
+		log:           log,
+		chain:         chain,
 	}, nil
 }
 
-func (e *ExecutionDebugger) DebugTransaction(txResolver debugger.TransactionResolver) (txErr, processError error) {
+func (e *ExecutionDebugger) DebugTransaction(
+	txResolver debugger.TransactionResolver,
+) (result *DebugResult, txErr, processError error) {
+
 	blockHeight, err := txResolver.BlockHeight()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	cache, err := registers.NewRemoteRegisterFileCache(blockHeight, d.log)
+	cache, err := registers.NewRemoteRegisterFileCache(blockHeight, e.log)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	result = &DebugResult{}
 
 	wrappers := []registers.RegisterGetWrapper{
 		cache,
-		registers.NewRemoteRegisterReadTracker(d.directory, d.log),
-		registers.NewCaptureContractWrapper(d.directory, d.log),
+		registers.NewRemoteRegisterReadTracker(result.RegisterReads, e.log),
+		//registers.NewCaptureContractWrapper(e.directory, e.log),
 	}
 
-	readFunc := registers.NewRemoteReader(client, blockHeight)
-	readFunc.Wrap(wrappers...)
+	readFunc := registers.
+		NewRemoteReader(e.archiveClient, blockHeight).
+		Wrap(wrappers...)
 
 	view := debugger.NewRemoteView(readFunc)
 
-	logInterceptor := debugger.NewLogInterceptor(d.log, d.directory)
-	defer func() {
-		err := logInterceptor.Close()
-		if err != nil {
-			d.log.Warn().
-				Err(err).
-				Msg("Could not close log interceptor.")
-		}
-	}()
-
-	dbg := NewRemoteDebugger(view, d.chain, d.directory, d.log.Output(logInterceptor))
+	dbg := NewRemoteDebugger(view, e.chain, e.log)
 	defer func(debugger *RemoteDebugger) {
 		err := debugger.Close()
 		if err != nil {
-			d.log.Warn().
-				Err(err).
-				Msg("Could not close debugger.")
+			e.log.Warn().Err(err).Msg("Could not close debugger.")
 		}
 	}(dbg)
 
-	//err = d.dumpTransactionToFile(txBody)
-
-	txBody, err := d.txResolver.TransactionBody()
+	txBody, err := txResolver.TransactionBody()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	d.log.Info().Msg(fmt.Sprintf("Debugging transaction with ID %s at block height %d", txBody.ID(), blockHeight))
+	e.log.Info().Msg(fmt.Sprintf("Debugging transaction with ID %s at block height %d", txBody.ID(), blockHeight))
 
 	txErr, err = dbg.RunTransaction(txBody)
 
@@ -97,12 +82,10 @@ func (e *ExecutionDebugger) DebugTransaction(txResolver debugger.TransactionReso
 		case io.Closer:
 			err := w.Close()
 			if err != nil {
-				d.log.Warn().
-					Err(err).
-					Msg("Could not close register read wrapper.")
+				e.log.Warn().Err(err).Msg("Could not close register read wrapper.")
 			}
 		}
 	}
 
-	return txErr, err
+	return result, txErr, err
 }
