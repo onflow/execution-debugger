@@ -11,10 +11,12 @@ import (
 
 type RegisterGetRegisterFunc func(string, string) (flow.RegisterValue, error)
 
-func (r *RegisterGetRegisterFunc) Wrap(wrappers ...RegisterGetWrapper) {
+func (r RegisterGetRegisterFunc) Wrap(wrappers ...RegisterGetWrapper) RegisterGetRegisterFunc {
+	var wrapped RegisterGetRegisterFunc
 	for _, wrapper := range wrappers {
-		*r = wrapper.Wrap(*r)
+		wrapped = wrapper.Wrap(r)
 	}
+	return wrapped
 }
 
 type RegisterGetWrapper interface {
@@ -36,6 +38,7 @@ func NewRemoteReader(client dps.APIClient, blockHeight uint64) RegisterGetRegist
 		if err != nil {
 			return nil, err
 		}
+
 		return resp.Values[0], nil
 	}
 }
