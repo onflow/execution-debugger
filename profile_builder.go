@@ -17,10 +17,9 @@ type ProfileBuilder struct {
 
 	nextLocID uint64
 	nextFunID uint64
-	directory string
 }
 
-func NewProfileBuilder(directory string) *ProfileBuilder {
+func NewProfileBuilder() *ProfileBuilder {
 	// https://www.polarsignals.com/blog/posts/2021/08/03/diy-pprof-profiles-using-go/
 	p := &profile.Profile{
 		Function: []*profile.Function{},
@@ -35,7 +34,6 @@ func NewProfileBuilder(directory string) *ProfileBuilder {
 		Profile:            p,
 		profileFunctionMap: make(map[string]uint64),
 		profileLocationMap: make(map[string]uint64),
-		directory:          directory,
 	}
 }
 
@@ -67,7 +65,7 @@ func (p *ProfileBuilder) Close() error {
 	return nil
 }
 
-func (p *ProfileBuilder) OnCadenceStatement(fvmEnv fvmRuntime.Environment, inter *interpreter.Interpreter, statement ast.Statement) {
+func (p *ProfileBuilder) OnStatement(fvmEnv fvmRuntime.Environment, inter *interpreter.Interpreter, statement ast.Statement) {
 	stack := inter.CallStack()
 	if len(stack) == 0 {
 		// what now?
