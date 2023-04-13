@@ -3,29 +3,28 @@ package registers
 import (
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
-	"os"
-	"path/filepath"
 	"strings"
 )
 
-type CaptureContractWrapper struct {
+type ContractImportsTracker struct {
 	contracts map[string]map[string]string
-	directory string
-
-	log zerolog.Logger
+	log       zerolog.Logger
 }
 
-var _ RegisterGetWrapper = &CaptureContractWrapper{}
+var _ RegisterGetWrapper = &ContractImportsTracker{}
 
-func NewCaptureContractWrapper(directory string, log zerolog.Logger) *CaptureContractWrapper {
-	return &CaptureContractWrapper{
-		directory: directory,
+func NewCaptureContractWrapper(log zerolog.Logger) *ContractImportsTracker {
+	return &ContractImportsTracker{
 		contracts: make(map[string]map[string]string),
 		log:       log,
 	}
 }
 
-func (c *CaptureContractWrapper) Wrap(inner RegisterGetRegisterFunc) RegisterGetRegisterFunc {
+func (c *ContractImportsTracker) Contracts() map[string]map[string]string {
+	return c.contracts
+}
+
+func (c *ContractImportsTracker) Wrap(inner RegisterGetRegisterFunc) RegisterGetRegisterFunc {
 	return func(owner string, key string) (flow.RegisterValue, error) {
 		val, err := inner(owner, key)
 		if err != nil {
@@ -47,24 +46,25 @@ func (c *CaptureContractWrapper) Wrap(inner RegisterGetRegisterFunc) RegisterGet
 	}
 }
 
-func (c *CaptureContractWrapper) Close() error {
-	for account, contracts := range c.contracts {
-		for name, code := range contracts {
-			filename := filepath.Join(c.directory, account, name+".cdc")
-			err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
-			if err != nil {
-				return err
+func (c *ContractImportsTracker) Close() error {
+	/*
+		for account, contracts := range c.contracts {
+			for name, code := range contracts {
+				filename := filepath.Join(c.directory, account, name+".cdc")
+				err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
+				if err != nil {
+					return err
+				}
+				file, err := os.Create(filename)
+				if err != nil {
+					return err
+				}
+				_, err = file.WriteString(code)
+				if err != nil {
+					return err
+				}
 			}
-			file, err := os.Create(filename)
-			if err != nil {
-				return err
-			}
-			_, err = file.WriteString(code)
-			if err != nil {
-				return err
-			}
-		}
 
-	}
+		}*/
 	return nil
 }
