@@ -12,7 +12,9 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type statementHandlerFunc func(fvmEnv fvmRuntime.Environment, inter *interpreter.Interpreter, statement ast.Statement)
+type CadenceStatementHandler interface {
+	OnStatement(fvmEnv fvmRuntime.Environment, inter *interpreter.Interpreter, statement ast.Statement)
+}
 
 type RemoteDebugger struct {
 	vm   *fvm.VirtualMachine
@@ -24,7 +26,7 @@ func NewRemoteDebugger(
 	view *debugger.RemoteView,
 	chain flow.Chain,
 	logger zerolog.Logger,
-	statementHandlers []statementHandlerFunc,
+	statementHandlers []CadenceStatementHandler,
 ) *RemoteDebugger {
 	vm := fvm.NewVirtualMachine()
 
@@ -39,7 +41,7 @@ func NewRemoteDebugger(
 			fvmRuntime.ReusableCadenceRuntimePoolConfig{
 				OnCadenceStatement: func(fvmEnv fvmRuntime.Environment, inter *interpreter.Interpreter, statement ast.Statement) {
 					for _, handler := range statementHandlers {
-						handler(fvmEnv, inter, statement) // change to interface
+						handler.OnStatement(fvmEnv, inter, statement) // change to interface
 					}
 				},
 			},
