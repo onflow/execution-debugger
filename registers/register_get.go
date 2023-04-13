@@ -22,7 +22,7 @@ type RegisterGetWrapper interface {
 }
 
 func NewRemoteReader(client dps.APIClient, blockHeight uint64) RegisterGetRegisterFunc {
-	return func(key string, address string) (flow.RegisterValue, error) {
+	return func(address string, key string) (flow.RegisterValue, error) {
 		ledgerKey := state.RegisterIDToKey(flow.RegisterID{Key: key, Owner: address})
 		ledgerPath, err := pathfinder.KeyToPath(ledgerKey, complete.DefaultPathFinderVersion)
 		if err != nil {
