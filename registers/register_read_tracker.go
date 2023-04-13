@@ -1,9 +1,13 @@
 package registers
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
+	"os"
+	"path/filepath"
+	"strconv"
 )
 
 type RegisterReadEntry struct {
@@ -46,37 +50,37 @@ func (r *RegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) RegisterGetReg
 	}
 }
 
-func (r *RegisterReadTracker) Close() error {
-	/*
-		err := os.MkdirAll(filepath.Dir(r.filename), os.ModePerm)
+func (r *RegisterReadTracker) Save(directory string) error {
+	filename := directory + "/registers"
+	err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	csvFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err := csvFile.Close()
+		if err != nil {
+			r.Log.Error().Err(err).Msg("error closing csv file")
+		}
+	}()
+
+	csvwriter := csv.NewWriter(csvFile)
+	defer csvwriter.Flush()
+	err = csvwriter.Write([]string{"# Sequence", "Owner", "Key", "bytes"})
+	if err != nil {
+		return err
+	}
+	for n, read := range r.RegisterReads {
+
+		err := csvwriter.Write([]string{strconv.Itoa(n + 1), read.key.Owner, read.key.Key, strconv.Itoa(read.read)})
 		if err != nil {
 			return err
 		}
+	}
 
-		csvFile, err := os.Create(r.filename)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			err := csvFile.Close()
-			if err != nil {
-				r.Log.Error().Err(err).Msg("error closing csv file")
-			}
-		}()
-
-		csvwriter := csv.NewWriter(csvFile)
-		defer csvwriter.Flush()
-		err = csvwriter.Write([]string{"# Sequence", "Owner", "Key", "bytes"})
-		if err != nil {
-			return err
-		}
-		for n, read := range r.RegisterReads {
-
-			err := csvwriter.Write([]string{strconv.Itoa(n + 1), read.key.Owner, read.key.Key, strconv.Itoa(read.read)})
-			if err != nil {
-				return err
-			}
-		}
-	*/
 	return nil
 }

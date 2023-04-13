@@ -7,7 +7,6 @@ import (
 	"github.com/onflow/flow-dps/api/dps"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
-	"io"
 )
 
 type ExecutionDebugger struct {
@@ -61,7 +60,9 @@ func (e *ExecutionDebugger) DebugTransaction(
 
 	view := debugger.NewRemoteView(readFunc)
 
-	dbg := NewRemoteDebugger(view, e.chain, e.log)
+	profiler := debugger.NewProfileBuilder()
+
+	dbg := NewRemoteDebugger(view, e.chain, e.log, []CadenceStatementHandler{profiler})
 	defer func(debugger *RemoteDebugger) {
 		err := debugger.Close()
 		if err != nil {
@@ -78,19 +79,12 @@ func (e *ExecutionDebugger) DebugTransaction(
 
 	txErr, err = dbg.RunTransaction(txBody)
 
-	// change to Saver (Save(dir)) interface
-	for _, wrapper := range readWrappers {
-		switch w := wrapper.(type) {
-		case io.Closer:
-			err := w.Close()
-			if err != nil {
-				e.log.Warn().Err(err).Msg("Could not close register read wrapper.")
-			}
-		}
-	}
-
 	return &DebugResult{
 		RegisterReads:   registerReads,
 		ContractImports: contractImports,
 	}, txErr, err
+}
+
+type FileSaver interface {
+	Save(string) error
 }

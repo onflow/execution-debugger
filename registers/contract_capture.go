@@ -3,6 +3,8 @@ package registers
 import (
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -46,25 +48,24 @@ func (c *ContractImportsTracker) Wrap(inner RegisterGetRegisterFunc) RegisterGet
 	}
 }
 
-func (c *ContractImportsTracker) Close() error {
-	/*
-		for account, contracts := range c.contracts {
-			for name, code := range contracts {
-				filename := filepath.Join(c.directory, account, name+".cdc")
-				err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
-				if err != nil {
-					return err
-				}
-				file, err := os.Create(filename)
-				if err != nil {
-					return err
-				}
-				_, err = file.WriteString(code)
-				if err != nil {
-					return err
-				}
+func (c *ContractImportsTracker) Save(directory string) error {
+	for account, contracts := range c.contracts {
+		for name, code := range contracts {
+			filename := filepath.Join(directory, account, name+".cdc")
+			err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
+			if err != nil {
+				return err
 			}
+			file, err := os.Create(filename)
+			if err != nil {
+				return err
+			}
+			_, err = file.WriteString(code)
+			if err != nil {
+				return err
+			}
+		}
 
-		}*/
+	}
 	return nil
 }

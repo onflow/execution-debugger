@@ -1,12 +1,13 @@
 package debugger
 
 import (
-	"fmt"
 	"github.com/google/pprof/profile"
 	"github.com/onflow/cadence/runtime/ast"
 	"github.com/onflow/cadence/runtime/interpreter"
 	"github.com/onflow/flow-go/fvm/environment"
 	fvmRuntime "github.com/onflow/flow-go/fvm/runtime"
+	"os"
+	"path/filepath"
 )
 
 type ProfileBuilder struct {
@@ -37,31 +38,30 @@ func NewProfileBuilder() *ProfileBuilder {
 	}
 }
 
-func (p *ProfileBuilder) Close() error {
-	/*
-		filename := p.directory + "/profile.pb.gz"
-		err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
-		if err != nil {
-			return err
-		}
+func (p *ProfileBuilder) Save(directory string) error {
+	filename := directory + "/profile.pb.gz"
+	err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
+	if err != nil {
+		return err
+	}
 
-		f, err := os.Create(filename)
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err := f.Close()
 		if err != nil {
-			return err
+			// log
 		}
-		defer func() {
-			err := f.Close()
-			if err != nil {
-				// log
-			}
-		}()
+	}()
 
-		// Write the profile to the file.
-		err = p.Profile.Write(f)
-		if err != nil {
-			return err
-		}
-	*/
+	// Write the profile to the file.
+	err = p.Profile.Write(f)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -75,13 +75,6 @@ func (p *ProfileBuilder) OnStatement(fvmEnv fvmRuntime.Environment, inter *inter
 	newComputation := fvmEnv.(environment.Environment).ComputationUsed()
 	computation := newComputation - p.lastComputation
 	p.lastComputation = newComputation
-
-	fmt.Println("---------- stack ---------- ")
-	fmt.Println("location", inter.Location)
-	fmt.Println("program", inter.Program)
-	fmt.Println("statement", statement.String())
-	fmt.Println(inter.CallStack())
-	fmt.Println("---------- stack ---------- ")
 
 	locationIds := make([]uint64, 0, len(stack))
 
