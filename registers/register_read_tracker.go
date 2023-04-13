@@ -15,23 +15,20 @@ func (e RegisterReadEntry) String() string {
 	return fmt.Sprintf("%v: %v bytes", e.key, e.read)
 }
 
-type RemoteRegisterReadTracker struct {
-	registerRead []RegisterReadEntry
-	filename     string
-
-	log zerolog.Logger
+type RegisterReadTracker struct {
+	RegisterReads []RegisterReadEntry
+	Log           zerolog.Logger
 }
 
-var _ RegisterGetWrapper = &RemoteRegisterReadTracker{}
-
-func NewRemoteRegisterReadTracker(result []RegisterReadEntry, log zerolog.Logger) *RemoteRegisterReadTracker {
-	return &RemoteRegisterReadTracker{
-		registerRead: result,
-		log:          log,
+func NewRemoteRegisterReadTracker(log zerolog.Logger) *RegisterReadTracker {
+	return &RegisterReadTracker{
+		Log: log,
 	}
 }
 
-func (r *RemoteRegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) RegisterGetRegisterFunc {
+var _ RegisterGetWrapper = &RegisterReadTracker{}
+
+func (r *RegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) RegisterGetRegisterFunc {
 	return func(owner string, key string) (flow.RegisterValue, error) {
 		val, err := inner(owner, key)
 		k := RegisterKey{owner, key}.ToReadable()
@@ -40,7 +37,7 @@ func (r *RemoteRegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) Register
 			return nil, err
 		}
 
-		r.registerRead = append(r.registerRead, RegisterReadEntry{
+		r.RegisterReads = append(r.RegisterReads, RegisterReadEntry{
 			key:  k,
 			read: len(val),
 		})
@@ -49,7 +46,7 @@ func (r *RemoteRegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) Register
 	}
 }
 
-func (r *RemoteRegisterReadTracker) Close() error {
+func (r *RegisterReadTracker) Close() error {
 	/*
 		err := os.MkdirAll(filepath.Dir(r.filename), os.ModePerm)
 		if err != nil {
@@ -63,7 +60,7 @@ func (r *RemoteRegisterReadTracker) Close() error {
 		defer func() {
 			err := csvFile.Close()
 			if err != nil {
-				r.log.Error().Err(err).Msg("error closing csv file")
+				r.Log.Error().Err(err).Msg("error closing csv file")
 			}
 		}()
 
@@ -73,7 +70,7 @@ func (r *RemoteRegisterReadTracker) Close() error {
 		if err != nil {
 			return err
 		}
-		for n, read := range r.registerRead {
+		for n, read := range r.RegisterReads {
 
 			err := csvwriter.Write([]string{strconv.Itoa(n + 1), read.key.Owner, read.key.Key, strconv.Itoa(read.read)})
 			if err != nil {
