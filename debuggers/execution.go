@@ -17,7 +17,8 @@ type ExecutionDebugger struct {
 }
 
 type DebugResult struct {
-	RegisterReads []registers.RegisterReadEntry
+	RegisterReads   *registers.RegisterReadTracker
+	ContractImports *registers.ContractImportsTracker
 }
 
 func NewExecutionDebugger(
@@ -46,17 +47,17 @@ func (e *ExecutionDebugger) DebugTransaction(
 		return nil, nil, err
 	}
 
-	result = &DebugResult{}
+	registerReads := registers.NewRemoteRegisterReadTracker(e.log)
+	contractImports := registers.NewCaptureContractWrapper(e.log)
 
-	wrappers := []registers.RegisterGetWrapper{
+	readWrappers := []registers.RegisterGetWrapper{
 		cache,
-		registers.NewRemoteRegisterReadTracker(result.RegisterReads, e.log),
-		//registers.NewCaptureContractWrapper(e.directory, e.log),
+		registerReads,
+		contractImports,
 	}
 
-	readFunc := registers.
-		NewRemoteReader(e.archiveClient, blockHeight).
-		Wrap(wrappers...)
+	readFunc := registers.NewRemoteReader(e.archiveClient, blockHeight)
+	readFunc.Wrap(readWrappers...)
 
 	view := debugger.NewRemoteView(readFunc)
 
@@ -77,7 +78,8 @@ func (e *ExecutionDebugger) DebugTransaction(
 
 	txErr, err = dbg.RunTransaction(txBody)
 
-	for _, wrapper := range wrappers {
+	// change to Saver (Save(dir)) interface
+	for _, wrapper := range readWrappers {
 		switch w := wrapper.(type) {
 		case io.Closer:
 			err := w.Close()
@@ -87,5 +89,8 @@ func (e *ExecutionDebugger) DebugTransaction(
 		}
 	}
 
-	return result, txErr, err
+	return &DebugResult{
+		RegisterReads:   registerReads,
+		ContractImports: contractImports,
+	}, txErr, err
 }
