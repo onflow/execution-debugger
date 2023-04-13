@@ -11,12 +11,10 @@ import (
 
 type RegisterGetRegisterFunc func(string, string) (flow.RegisterValue, error)
 
-func (r RegisterGetRegisterFunc) Wrap(wrappers ...RegisterGetWrapper) RegisterGetRegisterFunc {
-	var wrapped RegisterGetRegisterFunc
+func (r *RegisterGetRegisterFunc) Wrap(wrappers ...RegisterGetWrapper) {
 	for _, wrapper := range wrappers {
-		wrapped = wrapper.Wrap(r)
+		*r = wrapper.Wrap(*r)
 	}
-	return wrapped
 }
 
 type RegisterGetWrapper interface {
