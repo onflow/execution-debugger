@@ -84,9 +84,9 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 
 	view := debugger.NewRemoteView(readFunc)
 
-	logInterceptor := debugger.NewLogInterceptor(d.log, d.directory)
+	logInterceptor := debugger.NewLogInterceptor(d.log)
 	defer func() {
-		err := logInterceptor.Close()
+		err := logInterceptor.Save(d.directory)
 		if err != nil {
 			d.log.Warn().
 				Err(err).
