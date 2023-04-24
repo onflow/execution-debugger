@@ -4,14 +4,14 @@ import (
 	"fmt"
 	debugger "github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/registers"
-	"github.com/onflow/flow-dps/api/dps"
+	"github.com/onflow/flow-archive/api/archive"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
 )
 
 type ExecutionDebugger struct {
 	log           zerolog.Logger
-	archiveClient dps.APIClient
+	archiveClient archive.APIClient
 	chain         flow.Chain
 }
 
@@ -24,7 +24,7 @@ type DebugResult struct {
 
 func NewExecutionDebugger(
 	chain flow.Chain,
-	archiveClient dps.APIClient,
+	archiveClient archive.APIClient,
 	log zerolog.Logger,
 ) (*ExecutionDebugger, error) {
 	return &ExecutionDebugger{

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/registers"
-	"github.com/onflow/flow-dps/api/dps"
+	"github.com/onflow/flow-archive/api/archive"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -18,7 +18,7 @@ import (
 
 type TransactionDebugger struct {
 	txResolver  debugger.TransactionResolver
-	dpsClient   dps.APIClient
+	dpsClient   archive.APIClient
 	archiveHost string
 	chain       flow.Chain
 	directory   string
@@ -28,7 +28,7 @@ type TransactionDebugger struct {
 func NewTransactionDebugger(
 	txResolver debugger.TransactionResolver,
 	archiveHost string,
-	dpsClient dps.APIClient,
+	dpsClient archive.APIClient,
 	chain flow.Chain,
 	logger zerolog.Logger) *TransactionDebugger {
 
@@ -45,7 +45,7 @@ func NewTransactionDebugger(
 }
 
 type clientWithConnection struct {
-	dps.APIClient
+	archive.APIClient
 	*grpc.ClientConn
 }
 
@@ -142,7 +142,7 @@ func (d *TransactionDebugger) getClient() (clientWithConnection, error) {
 			Msg("Could not connect to server.")
 		return clientWithConnection{}, err
 	}
-	client := dps.NewAPIClient(conn)
+	client := archive.NewAPIClient(conn)
 
 	return clientWithConnection{
 		APIClient:  client,

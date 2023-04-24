@@ -2,8 +2,8 @@ package debugger
 
 import (
 	"context"
-	"github.com/onflow/flow-dps/api/dps"
-	"github.com/onflow/flow-dps/codec/zbor"
+	"github.com/onflow/flow-archive/api/archive"
+	"github.com/onflow/flow-archive/codec/zbor"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/pkg/errors"
 )
@@ -18,14 +18,14 @@ var _ TransactionResolver = &NetworkTransactions{}
 // NetworkTransactions implements transaction resolver that fetches existing transaction
 // from the Flow network using the archive node client.
 type NetworkTransactions struct {
-	Client dps.APIClient
+	Client archive.APIClient
 	ID     flow.Identifier
 }
 
 func (n *NetworkTransactions) TransactionBody() (*flow.TransactionBody, error) {
 	response, err := n.Client.GetTransaction(
 		context.Background(),
-		&dps.GetTransactionRequest{
+		&archive.GetTransactionRequest{
 			TransactionID: n.ID[:],
 		},
 	)
@@ -46,7 +46,7 @@ func (n *NetworkTransactions) TransactionBody() (*flow.TransactionBody, error) {
 func (n *NetworkTransactions) BlockHeight() (uint64, error) {
 	response, err := n.Client.GetHeightForTransaction(
 		context.Background(),
-		&dps.GetHeightForTransactionRequest{
+		&archive.GetHeightForTransactionRequest{
 			TransactionID: n.ID[:],
 		},
 	)
