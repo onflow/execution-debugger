@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/debuggers"
@@ -26,17 +25,18 @@ func main() {
 
 	flag.Parse()
 
-	txid, err := flow.HexStringToIdentifier(tx)
+	/*txid, err := flow.HexStringToIdentifier(tx)
 	if err != nil {
 		log.Error().
 			Err(err).
 			Msg("Could not parse transaction ID.")
 		return
-	}
+	}*/
 
 	chain := flow.Mainnet.Chain()
-	ctx := context.Background()
+	//ctx := context.Background()
 
+	host = "archive.mainnet.nodes.onflow.org:9000"
 	conn, err := grpc.Dial(
 		host,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -47,25 +47,45 @@ func main() {
 	}
 	client := dps.NewAPIClient(conn)
 
+	/*
+		txResolver := &debugger.CustomTransaction{
+			Tx: &flow.TransactionBody{
+				ReferenceBlockID: flow.MustHexStringToIdentifier("a9969efdf3eea714d648e206f62adee037f2a0a598f88b8e161a539e6489d5b4"),
+				Script: []byte(`
+					transaction {
+						execute {
+							var x: String = "Hello World"
+							var z: String = "Nooo"
+							log(x)
+						}
+					}
+				`),
+				GasLimit: 1000,
+			},
+			Height: 49956947,
+		}*/
+
 	txResolver := &debugger.NetworkTransactions{
 		Client: client,
-		ID:     txid,
+		ID:     flow.MustHexStringToIdentifier("79c1fcb19d5a56cc0515ffe65e4beb4980e141327f8924a0acce4075309ed52d"),
 	}
 
-	txErr, err := debuggers.
-		NewTransactionDebugger(txResolver, host, client, chain, log.Logger).
-		RunTransaction(ctx)
+	dbg, err := debuggers.NewExecutionDebugger(chain, client, log.Logger)
+	if err != nil {
+		log.Error().Err(err).Msg("New debugger error.")
+		return
+	}
 
+	_, txErr, err := dbg.DebugTransaction(txResolver)
 	if txErr != nil {
-		log.Error().
-			Err(txErr).
-			Msg("Transaction error.")
+		log.Error().Err(txErr).Msg("Transaction error.")
 		return
 	}
 	if err != nil {
-		log.Error().
-			Err(txErr).
-			Msg("Implementation error.")
+		log.Error().Err(err).Msg("Implementation error.")
 		return
 	}
+
+	//log.Info().Msgf("register reads: %v", result.RegisterReads)
+	//log.Info().Msgf("contracts: %v", result.ContractImports.Contracts())
 }

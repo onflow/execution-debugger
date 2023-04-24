@@ -18,6 +18,8 @@ type ExecutionDebugger struct {
 type DebugResult struct {
 	RegisterReads   *registers.RegisterReadTracker
 	ContractImports *registers.ContractImportsTracker
+	ProfileBuilder  *debugger.ProfileBuilder
+	LogInterceptor  *debugger.LogInterceptor
 }
 
 func NewExecutionDebugger(
@@ -59,10 +61,10 @@ func (e *ExecutionDebugger) DebugTransaction(
 	readFunc.Wrap(readWrappers...)
 
 	view := debugger.NewRemoteView(readFunc)
-
 	profiler := debugger.NewProfileBuilder()
+	logInterceptor := debugger.NewLogInterceptor(e.log)
 
-	dbg := NewRemoteDebugger(view, e.chain, e.log, []CadenceStatementHandler{profiler})
+	dbg := NewRemoteDebugger(view, e.chain, e.log.Output(logInterceptor), []CadenceStatementHandler{profiler})
 	defer func(debugger *RemoteDebugger) {
 		err := debugger.Close()
 		if err != nil {
@@ -82,6 +84,8 @@ func (e *ExecutionDebugger) DebugTransaction(
 	return &DebugResult{
 		RegisterReads:   registerReads,
 		ContractImports: contractImports,
+		ProfileBuilder:  profiler,
+		LogInterceptor:  logInterceptor,
 	}, txErr, err
 }
 

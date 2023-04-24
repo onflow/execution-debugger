@@ -3,7 +3,6 @@ package debugger
 import (
 	"encoding/csv"
 	"encoding/json"
-	"fmt"
 	"github.com/rs/zerolog"
 	"io"
 	"os"
@@ -16,16 +15,14 @@ type LogInterceptor struct {
 	ComputationIntensities map[uint64]uint64 `json:"computationIntensities"`
 	MemoryIntensities      map[uint64]uint64 `json:"memoryIntensities"`
 
-	log      zerolog.Logger
-	filename string
+	log zerolog.Logger
 }
 
-func NewLogInterceptor(log zerolog.Logger, directory string) *LogInterceptor {
+func NewLogInterceptor(log zerolog.Logger) *LogInterceptor {
 	return &LogInterceptor{
 		ComputationIntensities: map[uint64]uint64{},
 		MemoryIntensities:      map[uint64]uint64{},
 		log:                    log,
-		filename:               directory + "/computation_intensities.csv",
 	}
 }
 
@@ -37,8 +34,6 @@ type computationIntensitiesLog struct {
 }
 
 func (l *LogInterceptor) Write(p []byte) (n int, err error) {
-	fmt.Println("#log", string(p))
-
 	if strings.Contains(string(p), "computationIntensities") {
 		var log computationIntensitiesLog
 		err := json.Unmarshal(p, &log)
@@ -53,12 +48,13 @@ func (l *LogInterceptor) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (l *LogInterceptor) Close() error {
-	err := os.MkdirAll(filepath.Dir(l.filename), os.ModePerm)
+func (l *LogInterceptor) Save(directory string) error {
+	path := filepath.Dir(filepath.Join("computation_intensities.csv", directory))
+	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	csvFile, err := os.Create(l.filename)
+	csvFile, err := os.Create(path)
 	if err != nil {
 		return err
 	}

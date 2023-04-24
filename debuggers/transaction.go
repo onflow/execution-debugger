@@ -94,7 +94,7 @@ func (d *TransactionDebugger) RunTransaction(ctx context.Context) (txErr, proces
 		}
 	}()
 
-	dbg := NewRemoteDebugger(view, d.chain, d.log.Output(logInterceptor))
+	dbg := NewRemoteDebugger(view, d.chain, d.log.Output(logInterceptor), nil)
 	defer func(debugger *RemoteDebugger) {
 		err := debugger.Close()
 		if err != nil {

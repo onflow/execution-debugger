@@ -148,6 +148,8 @@ func (p *ProfileBuilder) toFunction(inter *interpreter.Interpreter, frame interp
 		}
 	}
 
+	//fmt.Println("# name: " + name + " file: " + filename + " line: " + string(line))
+
 	return &profile.Function{
 		ID:         p.nextFunID + 1,
 		Name:       name,
