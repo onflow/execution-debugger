@@ -5,8 +5,7 @@ go 1.19
 require (
 	github.com/google/pprof v0.0.0-20221219190121-3cb0bae90811
 	github.com/onflow/cadence v0.38.1
-	github.com/onflow/flow-archive v0.30.3-archive-node
-	github.com/onflow/flow-go v0.30.5
+	github.com/onflow/flow-archive v0.29.17-read-leaf-nodes
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.29.0
 	google.golang.org/grpc v1.53.0
@@ -25,7 +24,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ef-ds/deque v1.0.4 // indirect
 	github.com/ethereum/go-ethereum v1.9.13 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
@@ -75,7 +74,7 @@ require (
 	github.com/m4ksio/wal v1.0.1-0.20221209164835-154a17396e4c // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-pointer v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
@@ -94,6 +93,7 @@ require (
 	github.com/onflow/flow-core-contracts/lib/go/contracts v1.2.3 // indirect
 	github.com/onflow/flow-core-contracts/lib/go/templates v1.2.3 // indirect
 	github.com/onflow/flow-ft/lib/go/contracts v0.7.0 // indirect
+	github.com/onflow/flow-go v0.30.1-0.20230421234136-d802cde98178 // indirect
 	github.com/onflow/flow-go-sdk v0.40.0 // indirect
 	github.com/onflow/flow-go/crypto v0.24.7 // indirect
 	github.com/onflow/flow/protobuf/go/flow v0.3.2-0.20230330183547-d0dd18f6f20d // indirect
