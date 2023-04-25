@@ -1,82 +1,75 @@
 package debugger
 
 import (
+	"fmt"
 	"github.com/onflow/execution-debugger/registers"
 	"github.com/onflow/flow-go/fvm/state"
-	storageState "github.com/onflow/flow-go/fvm/storage/state"
 	"github.com/onflow/flow-go/model/flow"
 )
 
 type RemoteView struct {
 	Parent *RemoteView
-	Delta  map[flow.RegisterID]flow.RegisterValue
+	Delta  map[string]flow.RegisterValue
 
 	registerReader registers.RegisterGetRegisterFunc
 }
 
 func NewRemoteView(reader registers.RegisterGetRegisterFunc) *RemoteView {
 	return &RemoteView{
-		Delta:          make(map[flow.RegisterID]flow.RegisterValue),
+		Delta:          make(map[string]flow.RegisterValue),
 		registerReader: reader,
 	}
 }
 
-func (v *RemoteView) NewChild() *storageState.ExecutionState {
-	rv := &RemoteView{
+func (v *RemoteView) NewChild() state.View {
+	return &RemoteView{
 		Parent: v,
-		Delta:  make(map[flow.RegisterID]flow.RegisterValue),
+		Delta:  make(map[string][]byte),
 	}
-
-	return storageState.NewExecutionState(rv, storageState.DefaultParameters())
 }
 
-func (v *RemoteView) Set(id flow.RegisterID, value flow.RegisterValue) error {
-	v.Delta[id] = value
+func (v *RemoteView) MergeView(o state.View) error {
+	var other *RemoteView
+	var ok bool
+	if other, ok = o.(*RemoteView); !ok {
+		return fmt.Errorf("can not merge: view type mismatch (given: %T, expected:RemoteView)", o)
+	}
+
+	for k, value := range other.Delta {
+		v.Delta[k] = value
+	}
 	return nil
 }
 
-func (v *RemoteView) Get(id flow.RegisterID) (flow.RegisterValue, error) {
+func (v *RemoteView) DropDelta() {
+	v.Delta = make(map[string]flow.RegisterValue)
+}
+
+func (v *RemoteView) Set(owner, key string, value flow.RegisterValue) error {
+	v.Delta[owner+"~"+key] = value
+	return nil
+}
+
+func (v *RemoteView) Get(owner, key string) (flow.RegisterValue, error) {
+
 	// first check the delta
-	value, found := v.Delta[id]
+	value, found := v.Delta[owner+"~"+key]
 	if found {
 		return value, nil
 	}
 
 	// then call the parent (if exist)
 	if v.Parent != nil {
-		return v.Parent.Get(id)
+		return v.Parent.Get(owner, key)
 	}
 
 	// last use the getRemoteRegister
-	resp, err := v.registerReader(id.Owner, id.Key)
+	resp, err := v.registerReader(owner, key)
 	if err != nil {
 		return nil, err
 	}
 
 	return resp, nil
-}
-
-func (v *RemoteView) DropChanges() error {
-	v.Delta = make(map[flow.RegisterID]flow.RegisterValue)
-	return nil
-}
-
-func (v *RemoteView) Merge(child *state.ExecutionSnapshot) error {
-	// todo check
-	for id, val := range child.WriteSet {
-		v.Delta[id] = val
-	}
-
-	return nil
-}
-
-func (v *RemoteView) Finalize() *state.ExecutionSnapshot {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (v *RemoteView) Peek(id flow.RegisterID) (flow.RegisterValue, error) {
-	return v.Delta[id], nil
 }
 
 // returns all the registers that has been touched
@@ -90,5 +83,10 @@ func (v *RemoteView) RegisterUpdates() ([]flow.RegisterID, []flow.RegisterValue)
 
 func (v *RemoteView) Touch(owner, key string) error {
 	// no-op for now
+	return nil
+}
+
+func (v *RemoteView) Delete(owner, key string) error {
+	v.Delta[owner+"~"+key] = nil
 	return nil
 }
