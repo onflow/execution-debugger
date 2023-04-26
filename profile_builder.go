@@ -72,7 +72,7 @@ func (p *ProfileBuilder) OnStatement(fvmEnv fvmRuntime.Environment, inter *inter
 		return
 	}
 
-	newComputation := fvmEnv.(environment.Environment).ComputationUsed()
+	newComputation, _ := fvmEnv.(environment.Environment).ComputationUsed()
 	computation := newComputation - p.lastComputation
 	p.lastComputation = newComputation
 
@@ -123,7 +123,7 @@ func (p *ProfileBuilder) fnID(fn *profile.Function) string {
 }
 
 func (p *ProfileBuilder) toFunction(inter *interpreter.Interpreter, frame interpreter.Invocation) *profile.Function {
-	filename := frame.Self.StaticType(inter).String()
+	filename := (*frame.Self).StaticType(inter).String()
 	name := ""
 	line := int64(0)
 
