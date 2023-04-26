@@ -3,9 +3,10 @@ package debugger
 import (
 	"github.com/onflow/execution-debugger/registers"
 	"github.com/onflow/flow-go/fvm/state"
-	storageState "github.com/onflow/flow-go/fvm/storage/state"
 	"github.com/onflow/flow-go/model/flow"
 )
+
+var _ state.View = &RemoteView{}
 
 type RemoteView struct {
 	Parent *RemoteView
@@ -21,13 +22,11 @@ func NewRemoteView(reader registers.RegisterGetRegisterFunc) *RemoteView {
 	}
 }
 
-func (v *RemoteView) NewChild() *storageState.ExecutionState {
-	rv := &RemoteView{
+func (v *RemoteView) NewChild() state.View {
+	return &RemoteView{
 		Parent: v,
 		Delta:  make(map[flow.RegisterID]flow.RegisterValue),
 	}
-
-	return storageState.NewExecutionState(rv, storageState.DefaultParameters())
 }
 
 func (v *RemoteView) Set(id flow.RegisterID, value flow.RegisterValue) error {
