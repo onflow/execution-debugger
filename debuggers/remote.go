@@ -35,17 +35,20 @@ func NewRemoteDebugger(
 	ctx := fvm.NewContext(
 		fvm.WithLogger(logger),
 		fvm.WithChain(chain),
-		fvm.WithTransactionProcessors(fvm.NewTransactionInvoker()),
-		fvm.WithReusableCadenceRuntimePool(fvmRuntime.NewReusableCadenceRuntimePool(
-			1,
-			fvmRuntime.ReusableCadenceRuntimePoolConfig{
-				OnCadenceStatement: func(fvmEnv fvmRuntime.Environment, inter *interpreter.Interpreter, statement ast.Statement) {
-					for _, handler := range statementHandlers {
-						handler.OnStatement(fvmEnv, inter, statement) // change to interface
-					}
+		fvm.WithAuthorizationChecksEnabled(false),
+		fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
+		fvm.WithReusableCadenceRuntimePool(
+			fvmRuntime.NewReusableCadenceRuntimePoolWithConfig(
+				1,
+				fvmRuntime.ReusableCadenceRuntimePoolConfig{
+					OnStatement: func(fvmEnv fvmRuntime.Environment, inter *interpreter.Interpreter, statement ast.Statement) {
+						for _, handler := range statementHandlers {
+							handler.OnStatement(fvmEnv, inter, statement) // change to interface
+						}
+					},
 				},
-			},
-		)),
+			),
+		),
 	)
 
 	return &RemoteDebugger{
@@ -55,21 +58,42 @@ func NewRemoteDebugger(
 	}
 }
 
+type TransactionResult struct {
+	Events                flow.EventsList
+	ComputationUsed       uint64
+	MemoryEstimate        uint64
+	Logs                  []string
+	ReadRegisterIDs       []flow.RegisterID
+	UpdatedRegisterIDs    []flow.RegisterID
+	BytesWrittenToStorage uint64
+	BytesReadFromStorage  uint64
+}
+
 // RunTransaction runs the transaction given the latest sealed block data
-func (d *RemoteDebugger) RunTransaction(txBody *flow.TransactionBody) (txErr, processError error) {
+func (d *RemoteDebugger) RunTransaction(txBody *flow.TransactionBody) (result *TransactionResult, txErr, processError error) {
 	blockCtx := fvm.NewContextFromParent(d.ctx, fvm.WithBlockHeader(d.ctx.BlockHeader))
 	tx := fvm.Transaction(txBody, 0)
-	err := d.vm.Run(blockCtx, tx, d.view)
+	snapshot, output, err := d.vm.RunV2(blockCtx, tx, d.view)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return tx.Err, nil
+
+	return &TransactionResult{
+		Events:                output.Events,
+		ComputationUsed:       output.ComputationUsed,
+		MemoryEstimate:        output.MemoryEstimate,
+		Logs:                  output.Logs,
+		ReadRegisterIDs:       snapshot.ReadRegisterIDs(),
+		UpdatedRegisterIDs:    snapshot.UpdatedRegisterIDs(),
+		BytesWrittenToStorage: snapshot.TotalBytesWrittenToStorage(),
+		BytesReadFromStorage:  snapshot.TotalBytesReadFromStorage(),
+	}, tx.Err, nil
 }
 
 func (d *RemoteDebugger) RunScript(code []byte, arguments [][]byte) (value cadence.Value, scriptError, processError error) {
 	scriptCtx := fvm.NewContextFromParent(d.ctx, fvm.WithBlockHeader(d.ctx.BlockHeader))
 	script := fvm.Script(code).WithArguments(arguments...)
-	err := d.vm.Run(scriptCtx, script, d.view)
+	_, _, err := d.vm.RunV2(scriptCtx, script, d.view)
 	if err != nil {
 		return nil, nil, err
 	}
