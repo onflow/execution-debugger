@@ -5,7 +5,8 @@ go 1.19
 require (
 	github.com/google/pprof v0.0.0-20221219190121-3cb0bae90811
 	github.com/onflow/cadence v0.38.1
-	github.com/onflow/flow-archive v0.29.17-read-leaf-nodes
+	github.com/onflow/flow-archive v0.30.3-testing
+	github.com/onflow/flow-go v0.30.3-fix-read-leaf-nodes
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.29.0
 	google.golang.org/grpc v1.53.0
@@ -18,7 +19,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect
@@ -93,7 +93,6 @@ require (
 	github.com/onflow/flow-core-contracts/lib/go/contracts v1.2.3 // indirect
 	github.com/onflow/flow-core-contracts/lib/go/templates v1.2.3 // indirect
 	github.com/onflow/flow-ft/lib/go/contracts v0.7.0 // indirect
-	github.com/onflow/flow-go v0.30.1-0.20230421234136-d802cde98178 // indirect
 	github.com/onflow/flow-go-sdk v0.40.0 // indirect
 	github.com/onflow/flow-go/crypto v0.24.7 // indirect
 	github.com/onflow/flow/protobuf/go/flow v0.3.2-0.20230330183547-d0dd18f6f20d // indirect
@@ -124,6 +123,7 @@ require (
 	github.com/srikrsna/protoc-gen-gotag v0.6.2 // indirect
 	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/subosito/gotenv v1.4.0 // indirect
+	github.com/texttheater/golang-levenshtein/levenshtein v0.0.0-20200805054039-cae8b0eaed6c // indirect
 	github.com/turbolent/prettier v0.0.0-20220320183459-661cc755135d // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.11 // indirect
@@ -142,7 +142,6 @@ require (
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.4.0 // indirect
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15 // indirect
-	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
@@ -159,3 +158,5 @@ require (
 )
 
 replace github.com/onflow/cadence => ../cadence
+
+replace github.com/onflow/flow-go => ../flow-go
