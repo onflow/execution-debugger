@@ -16,10 +16,11 @@ type ExecutionDebugger struct {
 }
 
 type DebugResult struct {
-	RegisterReads   *registers.RegisterReadTracker
-	ContractImports *registers.ContractImportsTracker
-	ProfileBuilder  *debugger.ProfileBuilder
-	LogInterceptor  *debugger.LogInterceptor
+	RegisterReads     *registers.RegisterReadTracker
+	ContractImports   *registers.ContractImportsTracker
+	ProfileBuilder    *debugger.ProfileBuilder
+	LogInterceptor    *debugger.LogInterceptor
+	TransactionResult *TransactionResult
 }
 
 func NewExecutionDebugger(
@@ -79,13 +80,14 @@ func (e *ExecutionDebugger) DebugTransaction(
 
 	e.log.Info().Msg(fmt.Sprintf("Debugging transaction with ID %s at block height %d", txBody.ID(), blockHeight))
 
-	txErr, err = dbg.RunTransaction(txBody)
+	txResult, txErr, err := dbg.RunTransaction(txBody)
 
 	return &DebugResult{
-		RegisterReads:   registerReads,
-		ContractImports: contractImports,
-		ProfileBuilder:  profiler,
-		LogInterceptor:  logInterceptor,
+		RegisterReads:     registerReads,
+		ContractImports:   contractImports,
+		ProfileBuilder:    profiler,
+		LogInterceptor:    logInterceptor,
+		TransactionResult: txResult,
 	}, txErr, err
 }
 
