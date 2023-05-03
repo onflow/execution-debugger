@@ -1,4 +1,4 @@
-module github.com/janezpodhostnik/flow-transaction-info
+module github.com/onflow/execution-debugger
 
 go 1.19
 
