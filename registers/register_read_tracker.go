@@ -10,33 +10,29 @@ import (
 	"strconv"
 )
 
-type registerReadEntry struct {
+type RegisterReadEntry struct {
 	key  RegisterKey
 	read int
 }
 
-func (e registerReadEntry) String() string {
+func (e RegisterReadEntry) String() string {
 	return fmt.Sprintf("%v: %v bytes", e.key, e.read)
 }
 
-type RemoteRegisterReadTracker struct {
-	registerRead []registerReadEntry
-	filename     string
-
-	log zerolog.Logger
+type RegisterReadTracker struct {
+	RegisterReads []RegisterReadEntry
+	Log           zerolog.Logger
 }
 
-var _ RegisterGetWrapper = &RemoteRegisterReadTracker{}
-
-func NewRemoteRegisterReadTracker(directory string, log zerolog.Logger) *RemoteRegisterReadTracker {
-	return &RemoteRegisterReadTracker{
-		filename:     directory + "/registers_read.csv",
-		registerRead: []registerReadEntry{},
-		log:          log,
+func NewRemoteRegisterReadTracker(log zerolog.Logger) *RegisterReadTracker {
+	return &RegisterReadTracker{
+		Log: log,
 	}
 }
 
-func (r *RemoteRegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) RegisterGetRegisterFunc {
+var _ RegisterGetWrapper = &RegisterReadTracker{}
+
+func (r *RegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) RegisterGetRegisterFunc {
 	return func(owner string, key string) (flow.RegisterValue, error) {
 		val, err := inner(owner, key)
 		k := RegisterKey{owner, key}.ToReadable()
@@ -45,7 +41,7 @@ func (r *RemoteRegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) Register
 			return nil, err
 		}
 
-		r.registerRead = append(r.registerRead, registerReadEntry{
+		r.RegisterReads = append(r.RegisterReads, RegisterReadEntry{
 			key:  k,
 			read: len(val),
 		})
@@ -54,20 +50,21 @@ func (r *RemoteRegisterReadTracker) Wrap(inner RegisterGetRegisterFunc) Register
 	}
 }
 
-func (r *RemoteRegisterReadTracker) Close() error {
-	err := os.MkdirAll(filepath.Dir(r.filename), os.ModePerm)
+func (r *RegisterReadTracker) Save(directory string) error {
+	filename := directory + "/registers"
+	err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	csvFile, err := os.Create(r.filename)
+	csvFile, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		err := csvFile.Close()
 		if err != nil {
-			r.log.Error().Err(err).Msg("error closing csv file")
+			r.Log.Error().Err(err).Msg("error closing csv file")
 		}
 	}()
 
@@ -77,12 +74,13 @@ func (r *RemoteRegisterReadTracker) Close() error {
 	if err != nil {
 		return err
 	}
-	for n, read := range r.registerRead {
+	for n, read := range r.RegisterReads {
 
 		err := csvwriter.Write([]string{strconv.Itoa(n + 1), read.key.Owner, read.key.Key, strconv.Itoa(read.read)})
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
