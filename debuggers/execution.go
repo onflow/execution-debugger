@@ -6,7 +6,10 @@ import (
 	"github.com/onflow/execution-debugger/registers"
 	"github.com/onflow/flow-archive/api/archive"
 	"github.com/onflow/flow-go/model/flow"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type ExecutionDebugger struct {
@@ -21,6 +24,32 @@ type DebugResult struct {
 	ProfileBuilder    *debugger.ProfileBuilder
 	LogInterceptor    *debugger.LogInterceptor
 	TransactionResult *TransactionResult
+}
+
+func NewMainnetExecutionDebugger(log zerolog.Logger) (*ExecutionDebugger, error) {
+	chain := flow.Mainnet.Chain()
+	conn, err := grpc.Dial(
+		"archive.mainnet.nodes.onflow.org:9000",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not connect to archive node")
+	}
+
+	return NewExecutionDebugger(chain, archive.NewAPIClient(conn), log)
+}
+
+func NewTestnetExecutionDebugger(log zerolog.Logger) (*ExecutionDebugger, error) {
+	chain := flow.Mainnet.Chain()
+	conn, err := grpc.Dial(
+		"archive.testnet.nodes.onflow.org:9000",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not connect to archive node")
+	}
+
+	return NewExecutionDebugger(chain, archive.NewAPIClient(conn), log)
 }
 
 func NewExecutionDebugger(
