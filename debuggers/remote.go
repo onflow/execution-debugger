@@ -58,24 +58,24 @@ func NewRemoteDebugger(
 	}
 }
 
-type TransactionResult struct {
+type Execution struct {
 	Output   fvm.ProcedureOutput
 	Snapshot *state.ExecutionSnapshot
 }
 
 // RunTransaction runs the transaction given the latest sealed block data
-func (d *RemoteDebugger) RunTransaction(txBody *flow.TransactionBody) (result *TransactionResult, txErr, processError error) {
+func (d *RemoteDebugger) RunTransaction(txBody *flow.TransactionBody) (*Execution, error) {
 	blockCtx := fvm.NewContextFromParent(d.ctx, fvm.WithBlockHeader(d.ctx.BlockHeader))
 	tx := fvm.Transaction(txBody, 0)
 	snapshot, output, err := d.vm.RunV2(blockCtx, tx, d.view)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return &TransactionResult{
+	return &Execution{
 		Output:   output,
 		Snapshot: snapshot,
-	}, tx.Err, nil
+	}, nil
 }
 
 func (d *RemoteDebugger) RunScript(code []byte, arguments [][]byte) (value cadence.Value, scriptError, processError error) {

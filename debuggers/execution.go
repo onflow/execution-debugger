@@ -19,11 +19,11 @@ type ExecutionDebugger struct {
 }
 
 type DebugResult struct {
-	RegisterReads     *registers.RegisterReadTracker
-	ContractImports   *registers.ContractImportsTracker
-	ProfileBuilder    *debugger.ProfileBuilder
-	LogInterceptor    *debugger.LogInterceptor
-	TransactionResult *TransactionResult
+	RegisterReads   *registers.RegisterReadTracker
+	ContractImports *registers.ContractImportsTracker
+	ProfileBuilder  *debugger.ProfileBuilder
+	LogInterceptor  *debugger.LogInterceptor
+	Execution       *Execution
 }
 
 func NewMainnetExecutionDebugger(log zerolog.Logger) (*ExecutionDebugger, error) {
@@ -66,16 +66,16 @@ func NewExecutionDebugger(
 
 func (e *ExecutionDebugger) DebugTransaction(
 	txResolver debugger.TransactionResolver,
-) (result *DebugResult, txErr, processError error) {
+) (*DebugResult, error) {
 
 	blockHeight, err := txResolver.BlockHeight()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	cache, err := registers.NewRemoteRegisterFileCache(blockHeight, e.log)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	registerReads := registers.NewRemoteRegisterReadTracker(e.log)
@@ -104,20 +104,20 @@ func (e *ExecutionDebugger) DebugTransaction(
 
 	txBody, err := txResolver.TransactionBody()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	e.log.Info().Msg(fmt.Sprintf("Debugging transaction with ID %s at block height %d", txBody.ID(), blockHeight))
 
-	txResult, txErr, err := dbg.RunTransaction(txBody)
+	txResult, err := dbg.RunTransaction(txBody)
 
 	return &DebugResult{
-		RegisterReads:     registerReads,
-		ContractImports:   contractImports,
-		ProfileBuilder:    profiler,
-		LogInterceptor:    logInterceptor,
-		TransactionResult: txResult,
-	}, txErr, err
+		RegisterReads:   registerReads,
+		ContractImports: contractImports,
+		ProfileBuilder:  profiler,
+		LogInterceptor:  logInterceptor,
+		Execution:       txResult,
+	}, err
 }
 
 func (e *ExecutionDebugger) Client() archive.APIClient {
