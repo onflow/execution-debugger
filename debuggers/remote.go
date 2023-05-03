@@ -59,14 +59,8 @@ func NewRemoteDebugger(
 }
 
 type TransactionResult struct {
-	Events                flow.EventsList
-	ComputationUsed       uint64
-	MemoryEstimate        uint64
-	Logs                  []string
-	ReadRegisterIDs       []flow.RegisterID
-	UpdatedRegisterIDs    []flow.RegisterID
-	BytesWrittenToStorage uint64
-	BytesReadFromStorage  uint64
+	Output   fvm.ProcedureOutput
+	Snapshot *state.ExecutionSnapshot
 }
 
 // RunTransaction runs the transaction given the latest sealed block data
@@ -79,14 +73,8 @@ func (d *RemoteDebugger) RunTransaction(txBody *flow.TransactionBody) (result *T
 	}
 
 	return &TransactionResult{
-		Events:                output.Events,
-		ComputationUsed:       output.ComputationUsed,
-		MemoryEstimate:        output.MemoryEstimate,
-		Logs:                  output.Logs,
-		ReadRegisterIDs:       snapshot.ReadRegisterIDs(),
-		UpdatedRegisterIDs:    snapshot.UpdatedRegisterIDs(),
-		BytesWrittenToStorage: snapshot.TotalBytesWrittenToStorage(),
-		BytesReadFromStorage:  snapshot.TotalBytesReadFromStorage(),
+		Output:   output,
+		Snapshot: snapshot,
 	}, tx.Err, nil
 }
 
