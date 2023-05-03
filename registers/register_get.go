@@ -2,7 +2,7 @@ package registers
 
 import (
 	"context"
-	"github.com/onflow/flow-dps/api/dps"
+	"github.com/onflow/flow-archive/api/archive"
 	"github.com/onflow/flow-go/engine/execution/state"
 	"github.com/onflow/flow-go/ledger/common/pathfinder"
 	"github.com/onflow/flow-go/ledger/complete"
@@ -21,7 +21,7 @@ type RegisterGetWrapper interface {
 	Wrap(RegisterGetRegisterFunc) RegisterGetRegisterFunc
 }
 
-func NewRemoteReader(client dps.APIClient, blockHeight uint64) RegisterGetRegisterFunc {
+func NewRemoteReader(client archive.APIClient, blockHeight uint64) RegisterGetRegisterFunc {
 	return func(address string, key string) (flow.RegisterValue, error) {
 		ledgerKey := state.RegisterIDToKey(flow.RegisterID{Key: key, Owner: address})
 		ledgerPath, err := pathfinder.KeyToPath(ledgerKey, complete.DefaultPathFinderVersion)
@@ -29,7 +29,7 @@ func NewRemoteReader(client dps.APIClient, blockHeight uint64) RegisterGetRegist
 			return nil, err
 		}
 
-		resp, err := client.GetRegisterValues(context.Background(), &dps.GetRegisterValuesRequest{
+		resp, err := client.GetRegisterValues(context.Background(), &archive.GetRegisterValuesRequest{
 			Height: blockHeight,
 			Paths:  [][]byte{ledgerPath[:]},
 		})

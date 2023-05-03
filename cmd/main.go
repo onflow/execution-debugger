@@ -4,7 +4,7 @@ import (
 	"flag"
 	"github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/debuggers"
-	"github.com/onflow/flow-dps/api/dps"
+	"github.com/onflow/flow-archive/api/archive"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -45,7 +45,7 @@ func main() {
 		err = errors.Wrap(err, "could not connect to archive node")
 		panic(err)
 	}
-	client := dps.NewAPIClient(conn)
+	client := archive.NewAPIClient(conn)
 
 	/*
 		txResolver := &debugger.CustomTransaction{

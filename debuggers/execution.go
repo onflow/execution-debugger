@@ -4,27 +4,28 @@ import (
 	"fmt"
 	debugger "github.com/onflow/execution-debugger"
 	"github.com/onflow/execution-debugger/registers"
-	"github.com/onflow/flow-dps/api/dps"
+	"github.com/onflow/flow-archive/api/archive"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
 )
 
 type ExecutionDebugger struct {
 	log           zerolog.Logger
-	archiveClient dps.APIClient
+	archiveClient archive.APIClient
 	chain         flow.Chain
 }
 
 type DebugResult struct {
-	RegisterReads   *registers.RegisterReadTracker
-	ContractImports *registers.ContractImportsTracker
-	ProfileBuilder  *debugger.ProfileBuilder
-	LogInterceptor  *debugger.LogInterceptor
+	RegisterReads     *registers.RegisterReadTracker
+	ContractImports   *registers.ContractImportsTracker
+	ProfileBuilder    *debugger.ProfileBuilder
+	LogInterceptor    *debugger.LogInterceptor
+	TransactionResult *TransactionResult
 }
 
 func NewExecutionDebugger(
 	chain flow.Chain,
-	archiveClient dps.APIClient,
+	archiveClient archive.APIClient,
 	log zerolog.Logger,
 ) (*ExecutionDebugger, error) {
 	return &ExecutionDebugger{
@@ -79,13 +80,14 @@ func (e *ExecutionDebugger) DebugTransaction(
 
 	e.log.Info().Msg(fmt.Sprintf("Debugging transaction with ID %s at block height %d", txBody.ID(), blockHeight))
 
-	txErr, err = dbg.RunTransaction(txBody)
+	txResult, txErr, err := dbg.RunTransaction(txBody)
 
 	return &DebugResult{
-		RegisterReads:   registerReads,
-		ContractImports: contractImports,
-		ProfileBuilder:  profiler,
-		LogInterceptor:  logInterceptor,
+		RegisterReads:     registerReads,
+		ContractImports:   contractImports,
+		ProfileBuilder:    profiler,
+		LogInterceptor:    logInterceptor,
+		TransactionResult: txResult,
 	}, txErr, err
 }
 
