@@ -120,6 +120,10 @@ func (e *ExecutionDebugger) DebugTransaction(
 	}, txErr, err
 }
 
+func (e *ExecutionDebugger) Client() archive.APIClient {
+	return e.archiveClient
+}
+
 type FileSaver interface {
 	Save(string) error
 }
