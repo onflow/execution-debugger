@@ -58,36 +58,24 @@ func NewRemoteDebugger(
 	}
 }
 
-type TransactionResult struct {
-	Events                flow.EventsList
-	ComputationUsed       uint64
-	MemoryEstimate        uint64
-	Logs                  []string
-	ReadRegisterIDs       []flow.RegisterID
-	UpdatedRegisterIDs    []flow.RegisterID
-	BytesWrittenToStorage uint64
-	BytesReadFromStorage  uint64
+type Execution struct {
+	Output   fvm.ProcedureOutput
+	Snapshot *state.ExecutionSnapshot
 }
 
 // RunTransaction runs the transaction given the latest sealed block data
-func (d *RemoteDebugger) RunTransaction(txBody *flow.TransactionBody) (result *TransactionResult, txErr, processError error) {
+func (d *RemoteDebugger) RunTransaction(txBody *flow.TransactionBody) (*Execution, error) {
 	blockCtx := fvm.NewContextFromParent(d.ctx, fvm.WithBlockHeader(d.ctx.BlockHeader))
 	tx := fvm.Transaction(txBody, 0)
 	snapshot, output, err := d.vm.RunV2(blockCtx, tx, d.view)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return &TransactionResult{
-		Events:                output.Events,
-		ComputationUsed:       output.ComputationUsed,
-		MemoryEstimate:        output.MemoryEstimate,
-		Logs:                  output.Logs,
-		ReadRegisterIDs:       snapshot.ReadRegisterIDs(),
-		UpdatedRegisterIDs:    snapshot.UpdatedRegisterIDs(),
-		BytesWrittenToStorage: snapshot.TotalBytesWrittenToStorage(),
-		BytesReadFromStorage:  snapshot.TotalBytesReadFromStorage(),
-	}, tx.Err, nil
+	return &Execution{
+		Output:   output,
+		Snapshot: snapshot,
+	}, nil
 }
 
 func (d *RemoteDebugger) RunScript(code []byte, arguments [][]byte) (value cadence.Value, scriptError, processError error) {
